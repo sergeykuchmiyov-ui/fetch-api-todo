@@ -1,6 +1,25 @@
 const API_URL = "https://6aeccbd0fc3b911e6fd595c5.mockapi.io/tasks";
 
+const taskInput = document.getElementById("taskInput");
+const addButton = document.getElementById("addTask");
+const taskList = document.getElementById("taskList");
+const loading = document.getElementById("loading");
+const errorMessage = document.getElementById("errorMessage");
+const taskCounter = document.getElementById("taskCounter");
+
+function showLoading(value) {
+    loading.hidden = !value;
+}
+
+function showError(message = "") {
+    errorMessage.textContent = message;
+    errorMessage.hidden = message === "";
+}
+
 async function getTasks() {
+    showLoading(true);
+    showError("");
+
     try {
         const response = await fetch(API_URL);
 
@@ -14,11 +33,13 @@ async function getTasks() {
 
     } catch (error) {
         console.error(error);
+        showError("Не вдалося завантажити задачі!");
+    } finally {
+        showLoading(false);
     }
 }
-function renderTasks(tasks) {
-    const taskList = document.getElementById("taskList");
 
+function renderTasks(tasks) {
     taskList.innerHTML = "";
 
     tasks.forEach(task => {
@@ -29,11 +50,15 @@ function renderTasks(tasks) {
         checkbox.checked = task.completed;
 
         checkbox.addEventListener("change", () => {
-        updateTask(task.id, checkbox.checked);
+            updateTask(task.id, checkbox.checked);
         });
 
         const taskName = document.createElement("span");
         taskName.textContent = task.name;
+
+        if (task.completed) {
+            taskName.style.textDecoration = "line-through";
+        }
 
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Видалити";
@@ -48,16 +73,24 @@ function renderTasks(tasks) {
 
         taskList.appendChild(li);
     });
-}
-async function addTask() {
-    const taskInput = document.getElementById("taskInput");
 
+    const completedCount = tasks.filter(task => task.completed).length;
+    const activeCount = tasks.length - completedCount;
+
+    taskCounter.textContent =
+        `Усього: ${tasks.length} | Активні: ${activeCount} | Виконані: ${completedCount}`;
+}
+
+async function addTask() {
     const taskName = taskInput.value.trim();
 
     if (taskName === "") {
-        alert("Введіть назву задачі!");
+        showError("Введіть назву задачі!");
         return;
     }
+
+    addButton.disabled = true;
+    showError("");
 
     try {
         const response = await fetch(API_URL, {
@@ -77,14 +110,19 @@ async function addTask() {
 
         taskInput.value = "";
 
-        getTasks();
+        await getTasks();
 
     } catch (error) {
         console.error(error);
-        alert("Не вдалося додати задачу!");
+        showError("Не вдалося додати задачу!");
+    } finally {
+        addButton.disabled = false;
     }
 }
+
 async function deleteTask(id) {
+    showError("");
+
     try {
         const response = await fetch(`${API_URL}/${id}`, {
             method: "DELETE"
@@ -94,14 +132,16 @@ async function deleteTask(id) {
             throw new Error("Помилка видалення задачі");
         }
 
-        getTasks();
+        await getTasks();
 
     } catch (error) {
         console.error(error);
-        alert("Не вдалося видалити задачу!");
+        showError("Не вдалося видалити задачу!");
     }
 }
+
 async function updateTask(id, completed) {
+    showError("");
     try {
         const response = await fetch(`${API_URL}/${id}`, {
             method: "PATCH",
@@ -117,16 +157,14 @@ async function updateTask(id, completed) {
             throw new Error("Помилка оновлення задачі");
         }
 
-        getTasks();
+        await getTasks();
 
     } catch (error) {
         console.error(error);
-        alert("Не вдалося оновити задачу!");
+        showError("Не вдалося оновити задачу!");
     }
 }
 
-getTasks();
-
-const addButton = document.getElementById("addTask");
-
 addButton.addEventListener("click", addTask);
+
+getTasks();
