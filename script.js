@@ -24,16 +24,25 @@ function renderTasks(tasks) {
     tasks.forEach(task => {
         const li = document.createElement("li");
 
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed;
+
+        checkbox.addEventListener("change", () => {
+        updateTask(task.id, checkbox.checked);
+        });
+
         const taskName = document.createElement("span");
         taskName.textContent = task.name;
 
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "Видалити";
-        
+
         deleteButton.addEventListener("click", () => {
             deleteTask(task.id);
         });
 
+        li.appendChild(checkbox);
         li.appendChild(taskName);
         li.appendChild(deleteButton);
 
@@ -73,6 +82,46 @@ async function addTask() {
     } catch (error) {
         console.error(error);
         alert("Не вдалося додати задачу!");
+    }
+}
+async function deleteTask(id) {
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        });
+
+        if (!response.ok) {
+            throw new Error("Помилка видалення задачі");
+        }
+
+        getTasks();
+
+    } catch (error) {
+        console.error(error);
+        alert("Не вдалося видалити задачу!");
+    }
+}
+async function updateTask(id, completed) {
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                completed: completed
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Помилка оновлення задачі");
+        }
+
+        getTasks();
+
+    } catch (error) {
+        console.error(error);
+        alert("Не вдалося оновити задачу!");
     }
 }
 
