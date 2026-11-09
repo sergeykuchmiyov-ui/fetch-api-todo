@@ -10,7 +10,7 @@ async function getTasks() {
 
         const tasks = await response.json();
 
-        console.log(tasks);
+        renderTasks(tasks);
 
     } catch (error) {
         console.error(error);
